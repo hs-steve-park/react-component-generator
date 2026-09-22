@@ -22,3 +22,14 @@ export function ensureRenderCall(code: string): string {
   }
   return code;
 }
+
+/** provider 에러 메시지를 상태 코드 기반으로 사용자 친화적인 한국어 메시지로 변환한다. */
+export function toFriendlyErrorMessage(message: string): string {
+  if (message.includes('503')) {
+    return 'API 서버가 일시적으로 과부하 상태입니다. 잠시 후 다시 시도해주세요.';
+  }
+  if (message.includes('429')) {
+    return '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
+  }
+  return message;
+}

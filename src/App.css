@@ -638,6 +638,14 @@
   color: var(--amber) !important;
 }
 
+.card-error {
+  padding: 10px 16px;
+  background: var(--red-soft);
+  border-bottom: 2px solid var(--red);
+  color: var(--red);
+  font-size: 0.82rem;
+}
+
 .card-content {
   min-height: 280px;
   background: var(--bg);
@@ -664,6 +672,17 @@
 
 .preview-content {
   padding: 18px;
+}
+
+.preview-pending {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 320px;
+  padding: 34px;
+  border: 2px dashed var(--line);
+  color: var(--paper-dim);
+  font-size: 0.85rem;
 }
 
 .preview-render {

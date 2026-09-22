@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import type { GeneratedComponent, Provider } from '../types';
 import { useLocalStorageState } from './useLocalStorageState';
 import { serializeComponents, deserializeComponents } from '../utils/componentStorage';
+import { consumeGenerationStream } from '../utils/streamGeneration';
 
 const COMPONENTS_STORAGE_KEY = 'rcg:components';
 
@@ -27,6 +28,10 @@ export function useComponentGenerator(): UseComponentGeneratorReturn {
     setIsLoading(true);
     setError(null);
 
+    const updateComponent = (id: string, patch: Partial<GeneratedComponent>) => {
+      setComponents((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+    };
+
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
@@ -34,20 +39,39 @@ export function useComponentGenerator(): UseComponentGeneratorReturn {
         body: JSON.stringify({ prompt, ...(apiKey && { apiKey }), provider }),
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
+        const data = await res.json();
         throw new Error(data.error || 'Failed to generate component');
       }
 
-      const newComponent: GeneratedComponent = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        prompt,
-        code: data.code,
-        createdAt: new Date(),
-      };
+      if (!res.body) {
+        throw new Error('스트리밍 응답을 받을 수 없습니다.');
+      }
 
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const newComponent: GeneratedComponent = {
+        id,
+        prompt,
+        code: '',
+        createdAt: new Date(),
+        status: 'streaming',
+      };
       setComponents((prev) => [newComponent, ...prev]);
+
+      await consumeGenerationStream(res.body, {
+        onDelta: (text) => {
+          setComponents((prev) =>
+            prev.map((c) => (c.id === id ? { ...c, code: c.code + text } : c)),
+          );
+        },
+        onDone: (code) => {
+          updateComponent(id, { code, status: 'done' });
+        },
+        onError: (message) => {
+          updateComponent(id, { status: 'error', error: message });
+          throw new Error(message);
+        },
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       setError(message);
