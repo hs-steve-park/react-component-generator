@@ -314,6 +314,13 @@
   color: var(--line);
 }
 
+.prompt-error {
+  margin-top: 6px;
+  color: var(--red);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
 .btn-generate {
   height: 50px;
   padding: 0 20px;
